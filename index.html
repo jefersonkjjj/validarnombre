@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Formulario Dinámico</title>
+  <title>Validador de Nombre y Acuerdo de Pago</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -43,6 +43,14 @@
       background: #fee2e2;
       color: #b91c1c;
       border-left: 5px solid #dc2626;
+    }
+    .alert {
+      margin-top: 15px;
+      padding: 12px;
+      background-color: #fff7ed;
+      color: #92400e;
+      border-left: 5px solid #ea580c;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -120,6 +128,8 @@
 
       const LIMITE = 1207762;
       const MIN_CUOTA = 241542;
+      const MAX_CUOTAS_SIN_GARANTIA = 11;
+      const MAX_CUOTAS_CON_GARANTIA = 60;
 
       if (valor <= LIMITE) {
         output.innerHTML = `<p><strong>❌ No es posible hacer acuerdo de pago.</strong></p>`;
@@ -128,15 +138,41 @@
       } else {
         const cuotaInicial = Math.round(valor * 0.4);
         const saldoPendiente = Math.round(valor * 0.6);
-        const cuotas = Math.floor(saldoPendiente / MIN_CUOTA);
-        const cuotaMensual = Math.floor(saldoPendiente / cuotas);
+        let totalCuotas = Math.floor(saldoPendiente / MIN_CUOTA);
+        totalCuotas = Math.min(totalCuotas, MAX_CUOTAS_CON_GARANTIA);
+        let cuotaMensual = Math.floor(saldoPendiente / totalCuotas);
 
-        output.innerHTML = `
+        let html = `
           <p><strong>✅ Cuota inicial (40%):</strong> ${formatearCOP(cuotaInicial)}</p>
           <p><strong>Saldo pendiente a diferir (60%):</strong> ${formatearCOP(saldoPendiente)}</p>
-          <p><strong>Cantidad de cuotas (mínimo ${formatearCOP(MIN_CUOTA)} por cuota):</strong> ${cuotas}</p>
-          <p><strong>Valor por cuota:</strong> ${formatearCOP(cuotaMensual)}</p>
         `;
+
+        if (totalCuotas <= MAX_CUOTAS_SIN_GARANTIA) {
+          html += `
+            <p><strong>Cantidad de cuotas:</strong> ${totalCuotas}</p>
+            <p><strong>Valor por cuota:</strong> ${formatearCOP(cuotaMensual)}</p>
+          `;
+        } else {
+          // Opción sin garantía
+          const cuotas11 = MAX_CUOTAS_SIN_GARANTIA;
+          const valor11 = Math.floor(saldoPendiente / cuotas11);
+
+          html += `
+            <p><strong>Opción sin garantía:</strong></p>
+            <p>- Cuotas: ${cuotas11}</p>
+            <p>- Valor por cuota: ${formatearCOP(valor11)}</p>
+
+            <div class="alert">
+              Recuerde que si hace el acuerdo de pago a más de 11 cuotas debe traer una garantía, ya sea una hipoteca o una prenda.
+            </div>
+
+            <p><strong>Opción con garantía:</strong></p>
+            <p>- Cuotas posibles según operación: ${totalCuotas}</p>
+            <p>- Valor por cuota: ${formatearCOP(cuotaMensual)}</p>
+          `;
+        }
+
+        output.innerHTML = html;
         output.className = "result";
         output.style.display = "block";
       }
